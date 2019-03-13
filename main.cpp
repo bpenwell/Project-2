@@ -566,6 +566,148 @@ int main()
 			VectorXd xVector(dim, 1);
 			runData(10, filename_1, filename_3, xVector, sampleMu_1, sampleMu_2, sampleSigma_1, sampleSigma_2, pw_1, pw_2);
 		}
+		else if(input == "11"){
+			//Assumes data is already generated
+			ifstream fin_1;
+			fin_1.open(filename_1.c_str());
+			ifstream fin_2;
+			fin_2.open(filename_3.c_str());
+
+
+			VectorXd sampleMu_1(dim);
+			VectorXd sampleMu_2(dim);
+
+			MatrixXd sampleSigma_1(dim, dim);
+			MatrixXd sampleSigma_2(dim, dim);
+
+			int numberOfSamples = 0;
+			float holdX_sampleMean=0;
+			float holdY_sampleMean=0;
+
+			float tempValue1;
+			float tempValue2;
+
+			int lineIndex = 0;
+			//Find first set's means
+			while(!fin_1.eof()){
+				//run every 100 samples
+				fin_1 >> tempValue1;
+				fin_1 >> tempValue2;
+
+				if(lineIndex%100 == 0){
+					holdX_sampleMean += tempValue1;
+					holdY_sampleMean += tempValue2;
+					numberOfSamples++;
+				}
+				lineIndex++;
+			}
+			fin_1.close();
+			float sampleX_mean = holdX_sampleMean/numberOfSamples;
+			float sampleY_mean = holdY_sampleMean/numberOfSamples;
+			cout << "Sample means (set1): " << sampleX_mean << ", " << sampleY_mean << endl;
+
+			//sets sampleMu_1
+			sampleMu_1(0) = sampleX_mean;
+			sampleMu_1(1) = sampleY_mean;
+
+			fin_1.open(filename_1.c_str());
+
+			numberOfSamples = 0;
+			float holdX_sampleVar=0;
+			float holdY_sampleVar=0;
+
+			lineIndex = 0;
+			//Find first set's variances
+			while(!fin_1.eof()){
+				//run every 100 samples
+				fin_1 >> tempValue1;
+				fin_1 >> tempValue2;
+
+				if(lineIndex%100 == 0){
+					holdX_sampleVar += tempValue1;
+					holdY_sampleVar += tempValue2;
+					numberOfSamples++;
+				}
+				lineIndex++;
+			}
+			fin_1.close();
+
+			float sampleX_var = holdX_sampleVar/numberOfSamples;
+			float sampleY_var = holdY_sampleVar/numberOfSamples;
+			cout << "Sample variances (set1): " << sampleX_var << ", " << sampleY_var << endl;
+			//sets sampleSigma_1
+			sampleSigma_1(0,0) = sampleX_var;
+			sampleSigma_1(0,1) = 0;
+			sampleSigma_1(1,0) = 0;
+			sampleSigma_1(1,1) = sampleY_var;
+
+			sampleX_var = 0;
+			sampleY_var = 0;
+			holdX_sampleMean = 0;
+			holdY_sampleMean = 0;
+			numberOfSamples = 0;
+
+			lineIndex = 0;
+			//Find second set's means
+			while(!fin_2.eof()){
+				//run every 100 samples
+				fin_2 >> tempValue1;
+				fin_2 >> tempValue2;
+
+				if(lineIndex%100 == 0){
+					holdX_sampleMean += tempValue1;
+					holdY_sampleMean += tempValue2;
+					numberOfSamples++;
+				}
+				lineIndex++;
+			}
+			fin_2.close();
+			sampleX_mean = holdX_sampleMean/numberOfSamples;
+			sampleY_mean = holdY_sampleMean/numberOfSamples;
+			cout << "Sample means (set2): " << sampleX_mean << ", " << sampleY_mean << endl;
+
+			//sets sampleMu_1
+			sampleMu_2(0) = sampleX_mean;
+			sampleMu_2(1) = sampleY_mean;
+
+			fin_2.open(filename_3.c_str());
+
+			numberOfSamples = 0;
+			holdX_sampleVar=0;
+			holdY_sampleVar=0;
+			lineIndex = 0;
+			//Find second set's variances
+			while(!fin_2.eof()){				
+				//run every 100 samples
+				fin_2 >> tempValue1;
+				fin_2 >> tempValue2;
+
+				if(lineIndex%100 == 0){
+					holdX_sampleVar += ((tempValue1-sampleMu_2(0))*(tempValue1-sampleMu_2(0)));
+					holdY_sampleVar += ((tempValue2-sampleMu_2(1))*(tempValue2-sampleMu_2(1)));
+					numberOfSamples++;
+				}
+				lineIndex++;
+			}
+			fin_2.close();
+
+			sampleX_var = holdX_sampleVar/numberOfSamples;
+			sampleY_var = holdY_sampleVar/numberOfSamples;
+			cout << "Sample variances (set2): " << sampleX_var << ", " << sampleY_var << endl;
+			//sets sampleSigma_1
+			sampleSigma_2(0,0) = sampleX_var;
+			sampleSigma_2(0,1) = 0;
+			sampleSigma_2(1,0) = 0;
+			sampleSigma_2(1,1) = sampleY_var;
+
+			cout << "----------------" << endl;
+			cout << "Beginning classification..." << endl;
+
+			//Same code found in input=="2" section
+			VectorXd xVector(dim, 1);
+			runData(11, filename_1, filename_3, xVector, sampleMu_1, sampleMu_2, sampleSigma_1, sampleSigma_2, pw_1, pw_2);
+		}
+
 		else if (input != "-1")
 		{
 			cout << "\"" << input << "\" is not a valid command" << endl;
@@ -626,16 +768,17 @@ void runData(int passInput, string file_G1, string file_G2, VectorXd xVector, Ma
 			g1Value = minimumDistanceDiscFunc(xVector, mu_G1);
 			g2Value = minimumDistanceDiscFunc(xVector, mu_G2);
 		}
-		if(passInput == 4)
+		if(passInput == 4 || passInput == 8 || passInput == 9 || passInput == 10 || passInput == 11)
 		{
 			g1Value = quadraticDiscFunc_case3(xVector, mu_G1, sigma_G1, prior_G1);
 			g2Value = quadraticDiscFunc_case3(xVector, mu_G2, sigma_G2, prior_G2);
 		}
-		else if(passInput == 2 || passInput == 8 || passInput == 9 || passInput == 10)
+		else if(passInput == 2)
 		{
 			g1Value = linearDiscFunc_case1(xVector, mu_G1, 1.0, prior_G1);
 			g2Value = linearDiscFunc_case1(xVector, mu_G2, 1.0, prior_G2);
 		}
+
 
 		float temp = g1Value(0, 0) - g2Value(0, 0);
 
@@ -676,12 +819,12 @@ void runData(int passInput, string file_G1, string file_G2, VectorXd xVector, Ma
 			g1Value = minimumDistanceDiscFunc(xVector, mu_G1);
 			g2Value = minimumDistanceDiscFunc(xVector, mu_G2);
 		}
-		if(passInput == 4|| passInput == 10)
+		if(passInput == 4 || passInput == 8 || passInput == 9 || passInput == 10 || passInput == 11)
 		{
 			g1Value = quadraticDiscFunc_case3(xVector, mu_G1, sigma_G1, prior_G1);
 			g2Value = quadraticDiscFunc_case3(xVector, mu_G2, sigma_G2, prior_G2);
 		}
-		else if(passInput == 2 || passInput == 8 || passInput == 9)
+		else if(passInput == 2)
 		{
 			g1Value = linearDiscFunc_case1(xVector, mu_G1, 1.0, prior_G1);
 			g2Value = linearDiscFunc_case1(xVector, mu_G2, 1.0, prior_G2);
